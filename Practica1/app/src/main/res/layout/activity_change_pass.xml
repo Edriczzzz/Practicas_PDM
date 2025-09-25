@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     android:fillViewport="true">
 
     <LinearLayout
@@ -11,6 +12,7 @@
         android:orientation="vertical"
         android:padding="24dp"
         android:gravity="center"
+        android:textColor="#000000"
         tools:context=".ChangePasswordActivity">
 
         <!-- Title -->
@@ -24,13 +26,6 @@
             android:layout_marginBottom="16dp" />
 
         <!-- Password Requirements -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="La nueva contraseña debe tener:\n• Mínimo 8 caracteres\n• Al menos una mayúscula\n• Al menos un número\n• Al menos un símbolo (_, ., #, $, ?)"
-            android:textSize="12sp"
-            android:textColor="#666666"
-            android:layout_marginBottom="24dp" />
 
         <!-- Current Password Label -->
         <TextView
@@ -100,23 +95,23 @@
             android:id="@+id/btnSavePassword"
             android:layout_width="match_parent"
             android:layout_height="56dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/boton_redondo"
             android:text="Guardar Cambios"
-            android:textSize="16sp"
             android:textAllCaps="false"
-            android:background="#6200EA"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="16dp" />
+            android:textSize="16sp" />
 
         <!-- Cancel Button -->
         <Button
             android:id="@+id/btnCancelChange"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="56dp"
+            android:background="@drawable/boton_redondo"
             android:text="Cancelar"
-            android:textSize="14sp"
             android:textAllCaps="false"
-            android:background="@android:drawable/btn_default"
-            android:textColor="#666666" />
+            android:textColor="@color/white"
+            android:textSize="16sp" />
 
         <!-- Progress Bar -->
         <ProgressBar
