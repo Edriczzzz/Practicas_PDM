@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
     private lateinit var tvForgotPassword: TextView
-    private lateinit var progressBar: ProgressBar
+    private var progressBar: ProgressBar? = null
 
     private lateinit var userViewModel: UserViewModel
 
@@ -76,8 +76,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         tvForgotPassword.setOnClickListener {
-            val intent = Intent(this, RecoveryActivity::class.java)
-            startActivity(intent)
+            // Log para debug
+            println("DEBUG: Forgot password clicked!")
+            try {
+                val intent = Intent(this@MainActivity, com.example.login.view.RecoveryActivity::class.java)
+                startActivity(intent)
+            } catch (e: Exception) {
+                println("ERROR: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
@@ -111,11 +118,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLoading(isLoading: Boolean) {
         if (isLoading) {
-            progressBar.visibility = View.VISIBLE
+            progressBar?.visibility = View.VISIBLE
             btnLogin.isEnabled = false
             btnLogin.text = "Iniciando sesión..."
         } else {
-            progressBar.visibility = View.GONE
+            progressBar?.visibility = View.GONE
             btnLogin.isEnabled = true
             btnLogin.text = "Iniciar Sesión"
         }

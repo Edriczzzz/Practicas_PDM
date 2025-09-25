@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.login.model.LoginState
 import com.example.login.model.UserModel
 import com.example.login.model.ValidationResponse
+import com.example.login.model.RecoveryResponse
 import com.example.login.provider.UserProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -16,13 +17,21 @@ class UserViewModel(private val userProvider: UserProvider) : ViewModel() {
     private val _loginState = MutableLiveData<LoginState>()
     val loginState: MutableLiveData<LoginState> = _loginState
 
-    // LiveData para validaciones
+    // LiveData para validaciones generales
     private val _validationResult = MutableLiveData<ValidationResponse>()
     val validationResult: MutableLiveData<ValidationResponse> = _validationResult
+
+    // LiveData específico para recovery (incluye pregunta secreta)
+    private val _recoveryResult = MutableLiveData<RecoveryResponse>()
+    val recoveryResult: MutableLiveData<RecoveryResponse> = _recoveryResult
 
     // Usuario actual logueado
     private val _currentUser = MutableLiveData<UserModel>()
     val currentUser: MutableLiveData<UserModel> = _currentUser
+
+    // Estado de loading para recovery
+    private val _isRecoveryLoading = MutableLiveData<Boolean>()
+    val isRecoveryLoading: MutableLiveData<Boolean> = _isRecoveryLoading
 
     // Realizar login
     fun login(email: String, password: String) {
@@ -52,15 +61,35 @@ class UserViewModel(private val userProvider: UserProvider) : ViewModel() {
         }
     }
 
-    // Validar recuperación de contraseña
-    fun validateRecovery(email: String, secretAnswer: String) {
+    // Primer paso del recovery: obtener pregunta secreta por email
+    fun getSecretQuestion(email: String) {
         viewModelScope.launch {
-            val result = userProvider.validateRecovery(email, secretAnswer)
-            _validationResult.value = result
+            _isRecoveryLoading.value = true
+
+            // Simular delay de red
+            delay(800)
+
+            val result = userProvider.getSecretQuestion(email)
+            _recoveryResult.value = result
+            _isRecoveryLoading.value = false
         }
     }
 
-    // Cambiar contraseña (desde menú)
+    // Segundo paso del recovery: validar respuesta secreta
+    fun validateRecovery(email: String, secretAnswer: String) {
+        viewModelScope.launch {
+            _isRecoveryLoading.value = true
+
+            // Simular delay de red
+            delay(1000)
+
+            val result = userProvider.validateRecovery(email, secretAnswer)
+            _validationResult.value = result
+            _isRecoveryLoading.value = false
+        }
+    }
+
+    // Cambiar contraseña (desde menú del usuario logueado)
     fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
         viewModelScope.launch {
             if (newPassword != confirmPassword) {
@@ -84,7 +113,7 @@ class UserViewModel(private val userProvider: UserProvider) : ViewModel() {
         }
     }
 
-    // Restablecer contraseña (después de recovery)
+    // Restablecer contraseña después de recovery
     fun resetPassword(email: String, newPassword: String, confirmPassword: String) {
         viewModelScope.launch {
             if (newPassword != confirmPassword) {
@@ -105,8 +134,16 @@ class UserViewModel(private val userProvider: UserProvider) : ViewModel() {
 
     // Limpiar estados
     fun clearStates() {
+        println("DEBUG: UserViewModel clearStates called")
         _loginState.value = LoginState()
-        _validationResult.value = ValidationResponse(true)
+        _isRecoveryLoading.value = false
+        // No limpiar validation ni recovery result automáticamente
+    }
+
+    // Limpiar específicamente los resultados de recovery
+    fun clearRecoveryResults() {
+        _recoveryResult.value = RecoveryResponse(false, "")
+        _validationResult.value = ValidationResponse(false, "")
     }
 
     // Validar email en tiempo real

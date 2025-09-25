@@ -56,7 +56,6 @@ class WelcomeActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        // Toggle menú
         btnMenu.setOnClickListener {
             toggleMenu()
         }

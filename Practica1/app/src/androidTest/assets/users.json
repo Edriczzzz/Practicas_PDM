@@ -3,30 +3,28 @@
     "name": "Juan Pérez",
     "email": "juan@email.com",
     "passwd": "Password123#",
+    "secretQuestion": "¿Cuál es el nombre de tu primera mascota?",
     "secretAnswer": "firulais"
   },
   {
     "name": "María García",
     "email": "maria@email.com",
-    "passwd": "Secure456$",
-    "secretAnswer": "michi"
+    "passwd": "Password456$",
+    "secretQuestion": "¿En qué ciudad naciste?",
+    "secretAnswer": "guadalajara"
   },
   {
     "name": "Carlos López",
     "email": "carlos@email.com",
-    "passwd": "MyPass789_",
-    "secretAnswer": "rocky"
+    "passwd": "Password789_",
+    "secretQuestion": "¿Cuál es tu color favorito?",
+    "secretAnswer": "azul"
   },
   {
     "name": "Ana Rodríguez",
     "email": "ana@email.com",
-    "passwd": "Strong012?",
-    "secretAnswer": "luna"
-  },
-  {
-    "name": "Admin User",
-    "email": "admin@email.com",
-    "passwd": "Admin789_",
-    "secretAnswer": "admin"
+    "passwd": "Password123?",
+    "secretQuestion": "¿Cómo se llama tu mejor amigo de la infancia?",
+    "secretAnswer": "luis"
   }
 ]

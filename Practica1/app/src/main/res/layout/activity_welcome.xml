@@ -6,6 +6,8 @@
     android:orientation="vertical"
     tools:context=".view.WelcomeActivity">
 
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -24,16 +26,17 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <!-- Menu Button -->
         <Button
             android:id="@+id/btnMenu"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:text="☰"
-            android:textColor="#FFFFFF"
             android:background="@android:color/transparent"
             android:minWidth="0dp"
-            android:minHeight="0dp" />
+            android:minHeight="0dp"
+            android:text="☰"
+            android:textColor="#FFFFFF" />
+
+        <!-- Menu Button -->
 
     </LinearLayout>
 
@@ -108,7 +111,6 @@
                 android:textColor="#FFFFFF" />
 
         </LinearLayout>
-
 
 
     </LinearLayout>

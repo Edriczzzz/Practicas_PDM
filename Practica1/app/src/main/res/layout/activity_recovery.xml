@@ -44,33 +44,39 @@
             android:layout_marginBottom="16dp"
             android:maxLines="1" />
 
-        <!-- Secret Question Label -->
+        <!-- Secret Question (Initially Hidden) -->
         <TextView
+            android:id="@+id/tvSecretQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="¿Cuál es el nombre de tu primera mascota?"
             android:textSize="14sp"
             android:textColor="#666666"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:background="#F5F5F5"
+            android:textStyle="bold" />
 
-        <!-- Secret Answer Input -->
+        <!-- Secret Answer Input (Initially Hidden) -->
         <EditText
             android:id="@+id/etSecretAnswer"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:inputType="text"
-            android:hint="Respuesta a la pregunta secreta"
+            android:hint="Escribe tu respuesta aquí"
             android:background="@android:drawable/edit_text"
             android:padding="12dp"
             android:layout_marginBottom="24dp"
-            android:maxLines="1" />
+            android:maxLines="1"
+            android:visibility="gone" />
 
         <!-- Verify Button -->
         <Button
             android:id="@+id/btnVerify"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Verificar"
+            android:text="Buscar Usuario"
             android:textSize="16sp"
             android:textAllCaps="false"
             android:background="#6200EA"

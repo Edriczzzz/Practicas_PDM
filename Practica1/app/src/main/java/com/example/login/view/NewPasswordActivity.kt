@@ -42,6 +42,13 @@ class NewPasswordActivity : AppCompatActivity() {
     private fun getIntentData() {
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
         isRecovery = intent.getBooleanExtra("IS_RECOVERY", false)
+
+        // Validar que se recibió el email
+        if (userEmail.isEmpty()) {
+            Toast.makeText(this, "Error: No se recibió información del usuario", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
     }
 
     private fun initializeViews() {
@@ -104,11 +111,28 @@ class NewPasswordActivity : AppCompatActivity() {
                 }
             }
         })
+
+        // Agregar validación para confirmar contraseña
+        etConfirmPassword.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                val confirmPassword = s.toString()
+                val newPassword = etNewPassword.text.toString()
+
+                if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
+                    etConfirmPassword.error = "Las contraseñas no coinciden"
+                } else {
+                    etConfirmPassword.error = null
+                }
+            }
+        })
     }
 
     private fun changePassword() {
-        val newPassword = etNewPassword.text.toString()
-        val confirmPassword = etConfirmPassword.text.toString()
+        val newPassword = etNewPassword.text.toString().trim()
+        val confirmPassword = etConfirmPassword.text.toString().trim()
 
         // Validaciones básicas
         if (newPassword.isEmpty()) {
@@ -118,7 +142,7 @@ class NewPasswordActivity : AppCompatActivity() {
         }
 
         if (confirmPassword.isEmpty()) {
-            etConfirmPassword.error = "La confirmación es requerida"
+            etConfirmPassword.error = "La confirmación es requerida" // Corregido el texto
             etConfirmPassword.requestFocus()
             return
         }
