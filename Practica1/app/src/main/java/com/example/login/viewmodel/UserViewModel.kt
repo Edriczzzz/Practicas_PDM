@@ -172,4 +172,28 @@ class UserViewModel(private val userProvider: UserProvider) : ViewModel() {
 
         return ValidationResponse(true, "Contraseña válida")
     }
+    fun changePasswordWithEmail(email: String, currentPassword: String, newPassword: String, confirmPassword: String) {
+        viewModelScope.launch {
+            if (newPassword != confirmPassword) {
+                _validationResult.value = ValidationResponse(false, "Las contraseñas no coinciden")
+                return@launch
+            }
+
+            if (email.isBlank()) {
+                _validationResult.value = ValidationResponse(false, "Email requerido para cambiar contraseña")
+                return@launch
+            }
+
+            val result = userProvider.changePassword(email, currentPassword, newPassword)
+            _validationResult.value = result
+
+            if (result.isValid) {
+                // Actualizar el usuario actual si coincide con el email logueado
+                if (_currentUser.value?.email?.equals(email, ignoreCase = true) == true) {
+                    val updatedUser = _currentUser.value?.copy(passwd = newPassword)
+                    _currentUser.value = updatedUser
+                }
+            }
+        }
+    }
 }

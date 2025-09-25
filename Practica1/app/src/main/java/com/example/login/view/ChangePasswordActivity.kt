@@ -40,6 +40,15 @@ class ChangePasswordActivity : AppCompatActivity() {
 
     private fun getIntentData() {
         userEmail = intent.getStringExtra("USER_EMAIL") ?: ""
+
+        // Validar que se recibió el email
+        if (userEmail.isEmpty()) {
+            Toast.makeText(this, "Error: No se recibió información del usuario", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        println("DEBUG: ChangePasswordActivity - Email recibido: $userEmail")
     }
 
     private fun initializeViews() {
@@ -117,9 +126,9 @@ class ChangePasswordActivity : AppCompatActivity() {
     }
 
     private fun savePasswordChange() {
-        val currentPassword = etCurrentPassword.text.toString()
-        val newPassword = etNewPassword.text.toString()
-        val confirmNewPassword = etConfirmNewPassword.text.toString()
+        val currentPassword = etCurrentPassword.text.toString().trim()
+        val newPassword = etNewPassword.text.toString().trim()
+        val confirmNewPassword = etConfirmNewPassword.text.toString().trim()
 
         // Validaciones básicas
         if (currentPassword.isEmpty()) {
@@ -165,8 +174,10 @@ class ChangePasswordActivity : AppCompatActivity() {
         btnSavePassword.isEnabled = false
         btnSavePassword.text = "Guardando..."
 
-        // Realizar cambio de contraseña
-        userViewModel.changePassword(currentPassword, newPassword, confirmNewPassword)
+        println("DEBUG: ChangePasswordActivity - Intentando cambiar contraseña para: $userEmail")
+
+        // Realizar cambio de contraseña usando el email recibido
+        userViewModel.changePasswordWithEmail(userEmail, currentPassword, newPassword, confirmNewPassword)
     }
 
     override fun onResume() {

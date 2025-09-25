@@ -214,6 +214,10 @@ class UserProvider(private val context: Context) {
     fun changePassword(email: String, currentPassword: String, newPassword: String): ValidationResponse {
         println("DEBUG: changePassword llamado - Email: $email")
 
+        if (email.isBlank()) {
+            return ValidationResponse(false, "Email requerido para cambiar contraseña")
+        }
+
         if (!isValidPassword(newPassword)) {
             return ValidationResponse(false, "La nueva contraseña no cumple con los requisitos")
         }
