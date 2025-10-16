@@ -1,7 +1,7 @@
 [
   {
     "name": "Juan Pérez",
-    "email": "juan@email.com",
+    "email": "2",
     "passwd": "Password123#",
     "secretQuestion": "¿Cuál es el nombre de tu primera mascota?",
     "secretAnswer": "firulais"

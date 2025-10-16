@@ -1,14 +1,15 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "com.example.login"
+    namespace = "edu.ipn.upiita.pdm.navjpc"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.login"
+        applicationId = "edu.ipn.upiita.pdm.navjpc"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -33,24 +34,31 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-x
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+
+    implementation("androidx.navigation:navigation-compose:2.7.5")
+    implementation("androidx.compose.ui:ui:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    //viewmodel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
-    // livedata observer
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.3")
-    // gson
-    implementation("com.google.code.gson:gson:2.10.1")
-
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
