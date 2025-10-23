@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "edu.ipn.upiita.pdm.navjpc"
+    namespace = "com.example.practica3room"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "edu.ipn.upiita.pdm.navjpc"
+        applicationId = "com.example.practica3room"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
