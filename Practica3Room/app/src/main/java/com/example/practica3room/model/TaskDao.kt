@@ -13,7 +13,7 @@ interface TaskDao {
     suspend fun insertTask(task: Task)
 
     @Query("SELECT * FROM task")
-    suspend fun mostrarTask(id: Int): Task?
+    suspend fun getAllTasksList(): List<Task>  // Cambiado el nombre y quitado el parámetro
 
     @Update
     suspend fun updateTask(task: Task)
@@ -32,5 +32,8 @@ interface TaskDao {
 
     @Query("UPDATE Task SET status = 1 WHERE id = :taskId")
     suspend fun markTaskAsCompleted(taskId: Int)
+
+    @Query("UPDATE Task SET status = :newStatus WHERE id = :taskId")
+    suspend fun updateTaskStatus(taskId: Int, newStatus: Boolean)
 
 }
