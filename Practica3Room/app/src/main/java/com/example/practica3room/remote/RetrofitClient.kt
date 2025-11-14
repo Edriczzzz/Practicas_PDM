@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     // Cambia según tu caso (emulador: 10.0.2.2)
-    private const val BASE_URL = "http://10.0.2.2:3000/"
+    private const val BASE_URL = "https://practicapdm.vercel.app/"
 
     init {
         Log.d("RetrofitClient", "🌐 BASE_URL = $BASE_URL")

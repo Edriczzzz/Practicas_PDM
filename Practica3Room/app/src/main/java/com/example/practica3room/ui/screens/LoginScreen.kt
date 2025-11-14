@@ -1,5 +1,6 @@
 package com.example.practica3room.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
@@ -32,16 +34,12 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
     val scope = rememberCoroutineScope()
 
     // Observar el estado de autenticación
-    LaunchedEffect(authState) {
-        when (authState) {
-            is UiState.Success -> {
-                // Login exitoso, navegar al menú
-                navController.navigate("menu") {
-                    popUpTo("login") { inclusive = true }
-                }
-                viewModel.resetAuthState()
-            }
-            else -> { /* No hacer nada */ }
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.taskService.getTasks()
+            Log.d("API", "Conexión exitosa a Vercel ✅")
+        } catch (e: Exception) {
+            Log.e("API", "Error conectando a Vercel: ${e.message}")
         }
     }
 
