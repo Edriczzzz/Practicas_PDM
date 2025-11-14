@@ -2,7 +2,6 @@
 
 package com.example.practica3room.ui.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,24 +18,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.practica3room.model.Task
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
+import com.example.practica3room.viewmodel.UiState
 import java.text.SimpleDateFormat
 import java.util.*
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
     var taskName by remember { mutableStateOf("") }
     var plannedDate by remember { mutableStateOf("") }
-    var showSuccessDialog by remember { mutableStateOf(false) }
-    var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState()
+    val operationState by viewModel.operationState.collectAsState()
+
+    // Observar el estado de la operación
+    LaunchedEffect(operationState) {
+        when (operationState) {
+            is UiState.Success -> {
+                viewModel.resetOperationState()
+                navController.popBackStack()
+            }
+            is UiState.Error -> {
+                errorMessage = (operationState as UiState.Error).message
+            }
+            else -> { /* No hacer nada */ }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -87,12 +98,12 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                     focusedBorderColor = PrimaryBlue,
                     focusedLabelColor = PrimaryBlue,
                     cursorColor = PrimaryBlue
-                )
+                ),
+                enabled = operationState !is UiState.Loading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Campo de fecha con ícono de calendario
             OutlinedTextField(
                 value = plannedDate,
                 onValueChange = { },
@@ -100,7 +111,11 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                 placeholder = { Text("Selecciona una fecha") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showDatePicker = true },
+                    .clickable {
+                        if (operationState !is UiState.Loading) {
+                            showDatePicker = true
+                        }
+                    },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 readOnly = true,
@@ -116,7 +131,11 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Seleccionar fecha",
                         tint = PrimaryBlue,
-                        modifier = Modifier.clickable { showDatePicker = true }
+                        modifier = Modifier.clickable {
+                            if (operationState !is UiState.Loading) {
+                                showDatePicker = true
+                            }
+                        }
                     )
                 }
             )
@@ -125,20 +144,17 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
 
             Button(
                 onClick = {
-                    if (taskName.isBlank()) {
-                        errorMessage = "El nombre de la tarea no puede estar vacío"
-                        showErrorDialog = true
-                    } else if (plannedDate.isBlank()) {
-                        errorMessage = "Debe seleccionar una fecha"
-                        showErrorDialog = true
-                    } else {
-                        val newTask = Task(
-                            name = taskName.trim(),
-                            plannedD = plannedDate.trim(),
-                            status = false
-                        )
-                        viewModel.insertTask(newTask)
-                        showSuccessDialog = true
+                    errorMessage = ""
+                    when {
+                        taskName.isBlank() -> {
+                            errorMessage = "El nombre de la tarea no puede estar vacío"
+                        }
+                        plannedDate.isBlank() -> {
+                            errorMessage = "Debe seleccionar una fecha"
+                        }
+                        else -> {
+                            viewModel.createTask(taskName.trim(), plannedDate.trim())
+                        }
                     }
                 },
                 modifier = Modifier
@@ -147,19 +163,27 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryBlue
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = operationState !is UiState.Loading
             ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Guardar Tarea",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                if (operationState is UiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = BackgroundCream
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Guardar Tarea",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -172,12 +196,23 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = PrimaryBlue
-                )
+                ),
+                enabled = operationState !is UiState.Loading
             ) {
                 Text(
                     text = "Cancelar",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
+                )
+            }
+
+            // Mostrar error si existe
+            if (errorMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -214,54 +249,5 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
                 )
             )
         }
-    }
-
-    // Diálogo de éxito
-    if (showSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = { },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(48.dp)
-                )
-            },
-            title = { Text("¡Tarea Agregada!", fontWeight = FontWeight.Bold) },
-            text = { Text("La tarea '$taskName' ha sido guardada exitosamente.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showSuccessDialog = false
-                        navController.popBackStack()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue
-                    )
-                ) {
-                    Text("Aceptar")
-                }
-            }
-        )
-    }
-
-    // Diálogo de error
-    if (showErrorDialog) {
-        AlertDialog(
-            onDismissRequest = { showErrorDialog = false },
-            title = { Text("Error", fontWeight = FontWeight.Bold) },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                Button(
-                    onClick = { showErrorDialog = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue
-                    )
-                ) {
-                    Text("Entendido")
-                }
-            }
-        )
     }
 }

@@ -17,15 +17,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.practica3room.model.Task
+import com.example.practica3room.model.DateConverter
+import com.example.practica3room.model.TaskApi
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.Black
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
+import com.example.practica3room.viewmodel.UiState
 
 @Composable
 fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel) {
-    val tasks by viewModel.allTasks.collectAsState(initial = emptyList())
+    val tasksState by viewModel.tasksState.collectAsState()
+
+    // Cargar tareas al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.loadTasks()
+    }
 
     Scaffold(
         topBar = {
@@ -41,7 +48,17 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver",
+                            tint = BackgroundCream
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.loadTasks() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Actualizar",
+                            tint = BackgroundCream
                         )
                     }
                 },
@@ -53,43 +70,99 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
             )
         }
     ) { paddingValues ->
-        if (tasks.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(BackgroundCream)
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = Black.copy(alpha = 0.3f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No hay tareas para eliminar",
-                        fontSize = 20.sp,
-                        color = Black.copy(alpha = 0.6f)
-                    )
+        when (tasksState) {
+            is UiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(BackgroundCream),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = PrimaryBlue)
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(BackgroundCream)
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(tasks, key = { it.id }) { task ->
-                    TaskItemWithDelete(
-                        task = task,
-                        onDelete = { viewModel.deleteTask(task.id) }
-                    )
+
+            is UiState.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(BackgroundCream),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = (tasksState as UiState.Error).message,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { viewModel.loadTasks() },
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                        ) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+            }
+
+            is UiState.Success -> {
+                val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+
+                if (tasks.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(BackgroundCream)
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp),
+                                tint = Black.copy(alpha = 0.3f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No hay tareas para eliminar",
+                                fontSize = 20.sp,
+                                color = Black.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(BackgroundCream)
+                            .padding(paddingValues),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(tasks, key = { it.id ?: 0 }) { task ->
+                            TaskItemWithDelete(
+                                task = task,
+                                onDelete = { viewModel.deleteTask(task.id!!) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            else -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Cargando...")
                 }
             }
         }
@@ -97,7 +170,7 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
 }
 
 @Composable
-fun TaskItemWithDelete(task: Task, onDelete: () -> Unit) {
+fun TaskItemWithDelete(task: TaskApi, onDelete: () -> Unit) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
@@ -138,7 +211,7 @@ fun TaskItemWithDelete(task: Task, onDelete: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = task.plannedD,
+                        text = DateConverter.toDisplayFormat(task.deadline),
                         fontSize = 14.sp,
                         color = Black.copy(alpha = 0.6f)
                     )

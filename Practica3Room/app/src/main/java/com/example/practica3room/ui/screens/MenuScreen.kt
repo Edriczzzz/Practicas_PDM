@@ -7,13 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,10 +19,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
+import com.example.practica3room.viewmodel.TaskViewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MenuScreen(navController: NavHostController) {
+fun MenuScreen(navController: NavHostController, viewModel: TaskViewModel) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -36,6 +35,15 @@ fun MenuScreen(navController: NavHostController) {
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = { showLogoutDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = BackgroundCream
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = PrimaryBlue,
@@ -53,6 +61,13 @@ fun MenuScreen(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Icono principal
+            Text(
+                text = "📝",
+                fontSize = 64.sp,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
             // Botón: Ver todas las tareas
             MenuButton(
                 text = "Ver Todas las Tareas",
@@ -71,7 +86,7 @@ fun MenuScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón: Gestionar estado de tareas
+            // Botón: Editar tareas
             MenuButton(
                 text = "Editar Tareas",
                 icon = Icons.Default.Edit,
@@ -82,7 +97,7 @@ fun MenuScreen(navController: NavHostController) {
 
             // Botón: Gestionar estado de tareas
             MenuButton(
-                text = "Gestionar Estado de Tareas",
+                text = "Gestionar Estado",
                 icon = Icons.Default.CheckCircle,
                 onClick = { navController.navigate("manage_status") }
             )
@@ -96,6 +111,40 @@ fun MenuScreen(navController: NavHostController) {
                 onClick = { navController.navigate("delete_task") }
             )
         }
+    }
+
+    // Diálogo de logout
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.ExitToApp,
+                    contentDescription = null,
+                    tint = PrimaryBlue
+                )
+            },
+            title = { Text("Cerrar sesión") },
+            text = { Text("¿Deseas cerrar sesión?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text("Cerrar sesión")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancelar", color = PrimaryBlue)
+                }
+            }
+        )
     }
 }
 

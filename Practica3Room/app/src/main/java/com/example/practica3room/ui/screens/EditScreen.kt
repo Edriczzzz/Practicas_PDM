@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,10 +17,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.practica3room.model.Task
+import com.example.practica3room.model.DateConverter
+import com.example.practica3room.model.TaskApi
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
+import com.example.practica3room.viewmodel.UiState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -32,7 +32,12 @@ fun EditScreen(
     navController: NavHostController,
     viewModel: TaskViewModel
 ) {
-    val tasks by viewModel.allTasks.collectAsState(initial = emptyList())
+    val tasksState by viewModel.tasksState.collectAsState()
+
+    // Cargar tareas al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.loadTasks()
+    }
 
     Scaffold(
         topBar = {
@@ -53,6 +58,15 @@ fun EditScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = { viewModel.loadTasks() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Actualizar",
+                            tint = BackgroundCream
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = PrimaryBlue,
                     titleContentColor = BackgroundCream
@@ -66,29 +80,81 @@ fun EditScreen(
                 .background(BackgroundCream)
                 .padding(paddingValues)
         ) {
-            if (tasks.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No hay tareas para editar",
-                        fontSize = 18.sp,
-                        color = PrimaryBlue,
-                        fontWeight = FontWeight.Medium
-                    )
+            when (tasksState) {
+                is UiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = PrimaryBlue)
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(tasks) { task ->
-                        EditTaskCard(
-                            task = task,
-                            viewModel = viewModel
-                        )
+
+                is UiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = (tasksState as UiState.Error).message,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { viewModel.loadTasks() },
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                            ) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+                }
+
+                is UiState.Success -> {
+                    val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+
+                    if (tasks.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay tareas para editar",
+                                fontSize = 18.sp,
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(tasks, key = { it.id ?: 0 }) { task ->
+                                EditTaskCard(
+                                    task = task,
+                                    viewModel = viewModel
+                                )
+                            }
+                        }
+                    }
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Cargando...")
                     }
                 }
             }
@@ -99,16 +165,28 @@ fun EditScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTaskCard(
-    task: Task,
+    task: TaskApi,
     viewModel: TaskViewModel
 ) {
     var taskName by remember { mutableStateOf(task.name) }
-    var taskDate by remember { mutableStateOf(task.plannedD) }
+    var taskDate by remember { mutableStateOf(DateConverter.toDisplayFormat(task.deadline)) }
     var taskStatus by remember { mutableStateOf(task.status) }
     var isEditing by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState()
+    val operationState by viewModel.operationState.collectAsState()
+
+    // Observar el resultado de la operación
+    LaunchedEffect(operationState) {
+        when (operationState) {
+            is UiState.Success -> {
+                isEditing = false
+                viewModel.resetOperationState()
+            }
+            else -> { /* No hacer nada */ }
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -135,17 +213,23 @@ fun EditTaskCard(
                         focusedLabelColor = PrimaryBlue,
                         cursorColor = PrimaryBlue
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = operationState !is UiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(
                     value = taskDate,
                     onValueChange = { },
                     label = { Text("Fecha (dd/mm/yyyy)") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showDatePicker = true },
+                        .clickable {
+                            if (operationState !is UiState.Loading) {
+                                showDatePicker = true
+                            }
+                        },
                     colors = OutlinedTextFieldDefaults.colors(
                         disabledBorderColor = PrimaryBlue,
                         disabledLabelColor = PrimaryBlue,
@@ -159,7 +243,11 @@ fun EditTaskCard(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = "Seleccionar fecha",
                             tint = PrimaryBlue,
-                            modifier = Modifier.clickable { showDatePicker = true }
+                            modifier = Modifier.clickable {
+                                if (operationState !is UiState.Loading) {
+                                    showDatePicker = true
+                                }
+                            }
                         )
                     }
                 )
@@ -193,7 +281,8 @@ fun EditTaskCard(
                                 checkedTrackColor = Color(0xFF4CAF50),
                                 uncheckedThumbColor = Color.White,
                                 uncheckedTrackColor = Color.Gray
-                            )
+                            ),
+                            enabled = operationState !is UiState.Loading
                         )
                     }
                 }
@@ -208,14 +297,15 @@ fun EditTaskCard(
                     OutlinedButton(
                         onClick = {
                             taskName = task.name
-                            taskDate = task.plannedD
+                            taskDate = DateConverter.toDisplayFormat(task.deadline)
                             taskStatus = task.status
                             isEditing = false
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = PrimaryBlue
-                        )
+                        ),
+                        enabled = operationState !is UiState.Loading
                     ) {
                         Text("Cancelar")
                     }
@@ -223,27 +313,33 @@ fun EditTaskCard(
                     // Botón guardar
                     Button(
                         onClick = {
-                            val updatedTask = task.copy(
+                            viewModel.updateTask(
+                                id = task.id!!,
                                 name = taskName,
-                                plannedD = taskDate,
+                                deadline = taskDate,
                                 status = taskStatus
                             )
-                            viewModel.updateTask(updatedTask)
-                            isEditing = false
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = PrimaryBlue
                         ),
-                        enabled = taskName.isNotBlank() && taskDate.isNotBlank()
+                        enabled = taskName.isNotBlank() && taskDate.isNotBlank() && operationState !is UiState.Loading
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Guardar")
+                        if (operationState is UiState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Guardar")
+                        }
                     }
                 }
 
@@ -257,7 +353,7 @@ fun EditTaskCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Fecha: ${task.plannedD}",
+                    text = "Fecha: ${DateConverter.toDisplayFormat(task.deadline)}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

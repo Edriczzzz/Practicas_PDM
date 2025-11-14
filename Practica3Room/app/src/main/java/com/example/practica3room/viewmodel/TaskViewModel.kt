@@ -2,60 +2,146 @@ package com.example.practica3room.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.practica3room.model.Task
-import com.example.practica3room.model.TaskRepository
-import kotlinx.coroutines.flow.Flow
+import com.example.practica3room.model.DateConverter
+import com.example.practica3room.model.TaskApi
+import com.example.practica3room.repository.TaskApiRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
+// Estados de la UI
+sealed class UiState<out T> {
+    object Idle : UiState<Nothing>()
+    object Loading : UiState<Nothing>()
+    data class Success<T>(val data: T) : UiState<T>()
+    data class Error(val message: String) : UiState<Nothing>()
+}
 
-    // Flow de todas las tareas
-    val allTasks: Flow<List<Task>> = repository.getAll()
+class TaskViewModel(private val repository: TaskApiRepository) : ViewModel() {
 
-    // Insertar una tarea
-    fun insertTask(task: Task) {
+    // Estado de las tareas
+    private val _tasksState = MutableStateFlow<UiState<List<TaskApi>>>(UiState.Idle)
+    val tasksState: StateFlow<UiState<List<TaskApi>>> = _tasksState.asStateFlow()
+
+    // Estado de operaciones individuales (crear, actualizar, eliminar)
+    private val _operationState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val operationState: StateFlow<UiState<String>> = _operationState.asStateFlow()
+
+    // Estado de autenticación
+    private val _authState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val authState: StateFlow<UiState<String>> = _authState.asStateFlow()
+
+    // ============ AUTENTICACIÓN ============
+
+    fun login(username: String, password: String) {
         viewModelScope.launch {
-            repository.insert(task)
+            _authState.value = UiState.Loading
+
+            val result = repository.login(username, password)
+
+            _authState.value = if (result.isSuccess) {
+                UiState.Success("Login exitoso")
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
         }
     }
 
-    // Actualizar una tarea
-    fun updateTask(task: Task) {
+    fun logout() {
         viewModelScope.launch {
-            repository.update(task)
+            repository.logout()
+            _tasksState.value = UiState.Idle
+            _authState.value = UiState.Idle
         }
     }
 
-    // Eliminar una tarea por ID
-    fun deleteTask(taskId: Int) {
+    fun resetAuthState() {
+        _authState.value = UiState.Idle
+    }
+
+    // ============ OPERACIONES DE TAREAS ============
+
+    fun loadTasks() {
         viewModelScope.launch {
-            repository.deleteById(taskId)
+            _tasksState.value = UiState.Loading
+
+            val result = repository.getAllTasks()
+
+            _tasksState.value = if (result.isSuccess) {
+                UiState.Success(result.getOrNull() ?: emptyList())
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error al cargar tareas")
+            }
         }
     }
 
-    // Eliminar todas las tareas
-    fun deleteAllTasks() {
+    fun createTask(name: String, deadline: String) {
         viewModelScope.launch {
-            repository.deleteAll()
+            _operationState.value = UiState.Loading
+
+            val result = repository.createTask(name, deadline, false)
+
+            _operationState.value = if (result.isSuccess) {
+                loadTasks() // Recargar lista
+                UiState.Success("Tarea creada exitosamente")
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error al crear tarea")
+            }
         }
     }
 
-    // Marcar tarea como completada
-    fun markTaskAsCompleted(taskId: Int) {
+    fun updateTask(id: Int, name: String, deadline: String, status: Boolean) {
         viewModelScope.launch {
-            repository.markAsCompleted(taskId)
+            _operationState.value = UiState.Loading
+
+            val result = repository.updateTask(id, name, deadline, status)
+
+            _operationState.value = if (result.isSuccess) {
+                loadTasks() // Recargar lista
+                UiState.Success("Tarea actualizada exitosamente")
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error al actualizar")
+            }
         }
     }
 
-    // Obtener tarea por ID
-    suspend fun getTaskById(taskId: Int): Task? {
-        return repository.findById(taskId)
+    fun deleteTask(id: Int) {
+        viewModelScope.launch {
+            _operationState.value = UiState.Loading
+
+            val result = repository.deleteTask(id)
+
+            _operationState.value = if (result.isSuccess) {
+                loadTasks() // Recargar lista
+                UiState.Success("Tarea eliminada exitosamente")
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error al eliminar")
+            }
+        }
     }
 
-    // Actualizar el estado de una tarea
-    fun updateTaskStatus(taskId: Int, newStatus: Boolean) {
+    fun updateTaskStatus(id: Int, newStatus: Boolean) {
         viewModelScope.launch {
-            repository.updateStatus(taskId, newStatus)
+            val result = repository.updateTaskStatus(id, newStatus)
+
+            if (result.isSuccess) {
+                loadTasks() // Recargar lista
+            }
+        }
+    }
+
+    fun resetOperationState() {
+        _operationState.value = UiState.Idle
+    }
+
+    // ============ HELPER ============
+
+    // Obtener una tarea específica del estado actual
+    fun getTaskById(id: Int): TaskApi? {
+        return when (val state = _tasksState.value) {
+            is UiState.Success -> state.data.find { it.id == id }
+            else -> null
         }
     }
 }
