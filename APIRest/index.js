@@ -1,49 +1,52 @@
-import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import taskRoutes from "./routes/tasks.js";
-import authRoutes from "./routes/auth.js";
-import pool from "./config/db.js";  // ✅ Importar pool
+import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 
 dotenv.config();
+
 const app = express();
 
-app.use(cors());
+// Middlewares
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
-app.use("/api/tasks", taskRoutes);
+
+// Ruta de prueba
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "✅ API funcionando correctamente",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth/login",
+      tasks: "/api/tasks"
+    }
+  });
+});
+
+// Rutas de la API
 app.use("/api/auth", authRoutes);
+app.use("/api/tasks", taskRoutes);
 
-app.get("/", (req, res) => res.send("API Tasks funcionando ✅"));
-
-// ✅ AGREGAR ENDPOINT DE PRUEBA
-app.get("/test-db", async (req, res) => {
-  try {
-    const [rows] = await pool.query("SELECT 1 + 1 AS result");
-    res.json({ 
-      message: "Conexión a MySQL exitosa ✅", 
-      test: rows[0] 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: "Error conectando a MySQL ❌", 
-      error: error.message 
-    });
-  }
+// Manejo de rutas no encontradas
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: "Ruta no encontrada",
+    path: req.path 
+  });
 });
 
 // Para desarrollo local
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
+if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   });
 }
 
 // Exportar para Vercel
 export default app;
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🔗 http://localhost:${PORT}`);
-});
