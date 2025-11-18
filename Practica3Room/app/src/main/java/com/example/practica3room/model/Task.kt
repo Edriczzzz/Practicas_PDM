@@ -2,6 +2,8 @@ package com.example.practica3room.model
 
 
 import com.google.gson.annotations.SerializedName
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 // ============ Modelo de Task para la API ============
 
@@ -9,16 +11,12 @@ import com.google.gson.annotations.SerializedName
 data class TaskApi(
         @SerializedName("id") val id: Int? = null,
         @SerializedName("name") val name: String = "",
-        @SerializedName("status") private val _status: Int = 0,
+        @SerializedName("status") val status: Boolean = false,
         @SerializedName("deadline") val deadline: String = "",
         @SerializedName("created_at") val createdAt: String? = null,
         @SerializedName("updated_at") val updatedAt: String? = null
 )
-{
-        // Propiedad computed que convierte Int a Boolean
-        val status: Boolean
-                get() = _status == 1
-}
+
 
 data class LoginRequest(
         @SerializedName("username") val username: String,
@@ -40,21 +38,52 @@ data class MessageResponse(
 )
 
 
-// ============ Extensión para convertir de formato de fecha ============
 object DateConverter {
+        private val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        private val apiFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
         // Convierte de "dd/MM/yyyy" a "yyyy-MM-dd"
         fun toApiFormat(dateString: String): String {
-                val parts = dateString.split("/")
-                if (parts.size != 3) return dateString
-                val (day, month, year) = parts
-                return "$year-${month.padStart(2, '0')}-${day.padStart(2, '0')}"
+                return try {
+                        // Si ya viene en formato ISO (con T), extraer solo la fecha
+                        if (dateString.contains("T")) {
+                                return dateString.split("T")[0]
+                        }
+
+                        // Si viene en formato display (dd/MM/yyyy)
+                        if (dateString.contains("/")) {
+                                val parts = dateString.split("/")
+                                if (parts.size == 3) {
+                                        val (day, month, year) = parts
+                                        return "$year-${month.padStart(2, '0')}-${day.padStart(2, '0')}"
+                                }
+                        }
+
+                        // Si ya viene en formato correcto (yyyy-MM-dd)
+                        dateString
+                } catch (e: Exception) {
+                        dateString
+                }
         }
 
         // Convierte de "yyyy-MM-dd" a "dd/MM/yyyy"
         fun toDisplayFormat(dateString: String): String {
-                val parts = dateString.split("-")
-                if (parts.size != 3) return dateString
-                val (year, month, day) = parts
-                return "${day.padStart(2, '0')}/${month.padStart(2, '0')}/$year"
+                return try {
+                        // Si viene con timestamp ISO, extraer solo la fecha
+                        val cleanDate = if (dateString.contains("T")) {
+                                dateString.split("T")[0]
+                        } else {
+                                dateString
+                        }
+
+                        val parts = cleanDate.split("-")
+                        if (parts.size == 3) {
+                                val (year, month, day) = parts
+                                return "${day.padStart(2, '0')}/${month.padStart(2, '0')}/$year"
+                        }
+                        dateString
+                } catch (e: Exception) {
+                        dateString
+                }
         }
 }

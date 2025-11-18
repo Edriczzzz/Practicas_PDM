@@ -126,7 +126,11 @@ class TaskApiRepository {
                 deadline = apiDeadline
             )
 
+            Log.d("TaskApiRepository", "📤 Actualizando tarea $id con: name=$name, deadline=$apiDeadline, status=$status") // ← AGREGAR
+
             val response = taskService.updateTask(id, request)
+
+            Log.d("TaskApiRepository", "📥 Respuesta: ${response.code()} - ${response.body()}") // ← AGREGAR
 
             if (response.isSuccessful) {
                 val message = response.body()?.message ?: "Tarea actualizada"

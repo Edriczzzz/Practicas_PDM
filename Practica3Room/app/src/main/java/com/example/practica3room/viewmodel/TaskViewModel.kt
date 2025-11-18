@@ -1,5 +1,6 @@
 package com.example.practica3room.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.practica3room.model.DateConverter
@@ -95,12 +96,16 @@ class TaskViewModel(private val repository: TaskApiRepository) : ViewModel() {
         viewModelScope.launch {
             _operationState.value = UiState.Loading
 
+            Log.d("TaskViewModel", "📝 Actualizando tarea $id") // ← AGREGAR
+
             val result = repository.updateTask(id, name, deadline, status)
 
             _operationState.value = if (result.isSuccess) {
-                loadTasks() // Recargar lista
+                Log.d("TaskViewModel", "✅ Tarea actualizada, recargando lista") // ← AGREGAR
+                loadTasks() // ← Asegúrate que esto se llame
                 UiState.Success("Tarea actualizada exitosamente")
             } else {
+                Log.e("TaskViewModel", "❌ Error: ${result.exceptionOrNull()?.message}") // ← AGREGAR
                 UiState.Error(result.exceptionOrNull()?.message ?: "Error al actualizar")
             }
         }

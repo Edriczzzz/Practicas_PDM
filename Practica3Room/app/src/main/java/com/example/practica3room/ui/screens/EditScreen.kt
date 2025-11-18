@@ -1,5 +1,6 @@
 package com.example.practica3room.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -313,6 +314,7 @@ fun EditTaskCard(
                     // Botón guardar
                     Button(
                         onClick = {
+                            Log.d("EditScreen", "🔄 Guardando: id=${task.id}, name=$taskName, deadline=$taskDate, status=$taskStatus")
                             viewModel.updateTask(
                                 id = task.id!!,
                                 name = taskName,
