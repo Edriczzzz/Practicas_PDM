@@ -6,6 +6,9 @@ import retrofit2.http.*
 
 // ============ Servicio de Autenticación ============
 interface AuthApiService {
-    @POST("api/auth/login")
+    @GET("api/health")
+    suspend fun healthCheck(): Response<Any>
+
+    @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 }

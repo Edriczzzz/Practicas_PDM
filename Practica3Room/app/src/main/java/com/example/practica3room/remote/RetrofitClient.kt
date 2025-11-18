@@ -10,10 +10,11 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     // Cambia según tu caso (emulador: 10.0.2.2)
-    private const val BASE_URL = "https://practicapdm.vercel.app/"
+    private const val BASE_URL = "https://api-rest-vercel-tau.vercel.app/"
 
     init {
         Log.d("RetrofitClient", "🌐 BASE_URL = $BASE_URL")
+        Log.d("RetrofitClient", "🔗 Login endpoint será: ${BASE_URL}api/login")
     }
 
     // Token configurable (se puede setear desde Repository o AuthManager)

@@ -28,12 +28,24 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
     var username by remember { mutableStateOf("admin") }
-    var password by remember { mutableStateOf("1234") }
+    var password by remember { mutableStateOf("admin123") } // ← Cambiado a admin123
 
     val authState by viewModel.authState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // Observar el estado de autenticación
+    // 🎯 ESTO ES LO IMPORTANTE - Observar cambios en authState
+    LaunchedEffect(authState) {
+        if (authState is UiState.Success) {
+            Log.d("LoginScreen", "✅ Login exitoso, navegando a menu...")
+            navController.navigate("menu") {
+                // Limpiar el stack para que no pueda volver al login con back
+                popUpTo("login") { inclusive = true }
+            }
+            viewModel.resetAuthState() // Resetear el estado
+        }
+    }
+
+    // Prueba de conexión (opcional, puedes dejarlo o quitarlo)
     LaunchedEffect(Unit) {
         try {
             val response = RetrofitClient.taskService.getTasks()
@@ -51,7 +63,8 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo o título
+        // ... resto del código igual ...
+
         Text(
             text = "📝",
             fontSize = 72.sp,
@@ -123,6 +136,7 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
         Button(
             onClick = {
                 if (username.isNotBlank() && password.isNotBlank()) {
+                    Log.d("LoginScreen", "🔐 Intentando login con: $username")
                     viewModel.login(username.trim(), password.trim())
                 }
             },
@@ -168,7 +182,7 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Usuario: admin | Contraseña: 1234",
+            text = "Usuario: admin | Contraseña: admin123", // ← Actualizado
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold
