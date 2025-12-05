@@ -1,4 +1,5 @@
 package com.example.practica3room.model
+import com.example.practica3room.local.TaskEntity
 
 
 import com.google.gson.annotations.SerializedName
@@ -86,4 +87,37 @@ object DateConverter {
                         dateString
                 }
         }
+}
+
+
+// Extensiones para convertir TaskApi a TaskEntity
+fun TaskApi.toEntity(): TaskEntity {
+        return TaskEntity(
+                id = this.id ?: 0,
+                name = this.name,
+                status = this.status,
+                deadline = this.deadline,
+                updatedAt = System.currentTimeMillis(),
+                pendingSync = false,
+                deleted = false
+        )
+}
+
+// Extensiones para convertir TaskEntity a TaskApi
+fun TaskEntity.toApi(): TaskApi {
+        return TaskApi(
+                id = this.id,
+                name = this.name,
+                status = this.status,
+                deadline = this.deadline
+        )
+}
+
+// Extensiones para convertir TaskEntity a TaskRequest (para crear/actualizar)
+fun TaskEntity.toRequest(): TaskRequest {
+        return TaskRequest(
+                name = this.name,
+                status = this.status,
+                deadline = this.deadline
+        )
 }

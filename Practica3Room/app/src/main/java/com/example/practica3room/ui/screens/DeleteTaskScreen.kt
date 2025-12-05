@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.practica3room.model.DateConverter
-import com.example.practica3room.model.TaskApi
+import com.example.practica3room.local.TaskEntity
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.Black
 import com.example.practica3room.ui.theme.PrimaryBlue
@@ -113,7 +113,7 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
             }
 
             is UiState.Success -> {
-                val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+                val tasks = (tasksState as UiState.Success<List<TaskEntity>>).data
 
                 if (tasks.isEmpty()) {
                     Box(
@@ -147,10 +147,10 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(tasks, key = { it.id ?: 0 }) { task ->
-                            TaskItemWithDelete(
+                        items(tasks, key = { it.id }) { task ->
+                        TaskItemWithDelete(
                                 task = task,
-                                onDelete = { viewModel.deleteTask(task.id!!) }
+                                onDelete = { viewModel.deleteTask(task.id) }
                             )
                         }
                     }
@@ -170,7 +170,7 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
 }
 
 @Composable
-fun TaskItemWithDelete(task: TaskApi, onDelete: () -> Unit) {
+fun TaskItemWithDelete(task: TaskEntity, onDelete: () -> Unit){
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(

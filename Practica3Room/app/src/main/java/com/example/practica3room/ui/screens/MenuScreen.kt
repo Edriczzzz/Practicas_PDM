@@ -20,11 +20,13 @@ import androidx.navigation.NavHostController
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
+import com.example.practica3room.viewmodel.UiState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MenuScreen(navController: NavHostController, viewModel: TaskViewModel) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val syncState by viewModel.syncState.collectAsState()  // ← AGREGAR
 
     Scaffold(
         topBar = {
@@ -37,6 +39,25 @@ fun MenuScreen(navController: NavHostController, viewModel: TaskViewModel) {
                     )
                 },
                 actions = {
+                    // ← AGREGAR BOTÓN DE SINCRONIZACIÓN
+                    IconButton(
+                        onClick = { viewModel.syncAll() },
+                        enabled = syncState !is UiState.Loading
+                    ) {
+                        if (syncState is UiState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = BackgroundCream
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Sincronizar",
+                                tint = BackgroundCream
+                            )
+                        }
+                    }
+
                     IconButton(onClick = { showLogoutDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.ExitToApp,

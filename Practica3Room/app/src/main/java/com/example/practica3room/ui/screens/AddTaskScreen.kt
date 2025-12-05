@@ -39,8 +39,11 @@ fun AddTaskScreen(navController: NavHostController, viewModel: TaskViewModel) {
     LaunchedEffect(operationState) {
         when (operationState) {
             is UiState.Success -> {
+                // Limpiar campos
+                taskName = ""
+                plannedDate = ""
+                showDatePicker = false
                 viewModel.resetOperationState()
-                navController.popBackStack()
             }
             is UiState.Error -> {
                 errorMessage = (operationState as UiState.Error).message

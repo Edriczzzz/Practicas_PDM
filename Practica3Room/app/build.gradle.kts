@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -76,6 +77,17 @@ dependencies {
     // DataStore para guardar el token JWT
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     // =========================================
+    // Room - NUEVAS DEPENDENCIAS
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+
+    // WorkManager - NUEVA DEPENDENCIA
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
     // Testing
     testImplementation(libs.junit)
