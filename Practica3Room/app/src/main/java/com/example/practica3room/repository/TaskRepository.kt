@@ -1,4 +1,4 @@
-package com.example.practica3room.data.repository
+package com.example.practica3room.repository
 
 import android.util.Log
 import com.example.practica3room.local.TaskDAO

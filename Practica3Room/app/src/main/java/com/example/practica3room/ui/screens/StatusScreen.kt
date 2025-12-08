@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.practica3room.local.TaskEntity
 import com.example.practica3room.model.DateConverter
-import com.example.practica3room.model.TaskApi
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
@@ -118,7 +118,7 @@ fun StatusScreen(
                 }
 
                 is UiState.Success -> {
-                    val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+                    val tasks = (tasksState as UiState.Success<List<TaskEntity>>).data
 
                     if (tasks.isEmpty()) {
                         Box(
@@ -138,11 +138,11 @@ fun StatusScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(tasks, key = { it.id ?: 0 }) { task ->
+                            items(tasks, key = { it.id }) { task ->
                                 TaskStatusItem(
                                     task = task,
                                     onStatusChange = { newStatus ->
-                                        viewModel.updateTaskStatus(task.id!!, newStatus)
+                                        viewModel.updateTaskStatus(task.id, newStatus)
                                     }
                                 )
                             }
@@ -165,7 +165,7 @@ fun StatusScreen(
 
 @Composable
 fun TaskStatusItem(
-    task: TaskApi,
+    task: TaskEntity,
     onStatusChange: (Boolean) -> Unit
 ) {
     Card(

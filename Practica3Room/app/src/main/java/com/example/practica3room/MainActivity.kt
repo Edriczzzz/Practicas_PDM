@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.practica3room.local.TokenManager
+import com.example.practica3room.di.AppContainer
 import com.example.practica3room.repository.TaskApiRepository
 import com.example.practica3room.ui.screens.Navigator
 import com.example.practica3room.ui.theme.Practica3RoomTheme
@@ -17,12 +17,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Inicializar TokenManager y Repository
-        val tokenManager = TokenManager(applicationContext)
-        val repository = TaskApiRepository()
+        // TaskApiRepository (para login/logout)
+        val apiRepository = TaskApiRepository()
 
-        // Crear el ViewModel
-        viewModel = TaskViewModel(repository)
+        // TaskRepository del AppContainer (para operaciones de tareas con Room + API)
+        val taskRepository = AppContainer.taskRepository
+
+        // Crear el ViewModel con ambos repositorios
+        viewModel = TaskViewModel(
+            repository = taskRepository,
+            apiRepository = apiRepository
+        )
 
         setContent {
             Practica3RoomTheme {

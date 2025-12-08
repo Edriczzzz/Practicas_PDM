@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.practica3room.model.DateConverter
 import com.example.practica3room.local.TaskEntity
+import com.example.practica3room.model.DateConverter
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.Black
 import com.example.practica3room.ui.theme.PrimaryBlue
@@ -148,7 +148,7 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(tasks, key = { it.id }) { task ->
-                        TaskItemWithDelete(
+                            TaskItemWithDelete(
                                 task = task,
                                 onDelete = { viewModel.deleteTask(task.id) }
                             )
@@ -170,7 +170,7 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
 }
 
 @Composable
-fun TaskItemWithDelete(task: TaskEntity, onDelete: () -> Unit){
+fun TaskItemWithDelete(task: TaskEntity, onDelete: () -> Unit) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(

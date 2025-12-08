@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.practica3room.local.TaskEntity
 import com.example.practica3room.model.DateConverter
-import com.example.practica3room.model.TaskApi
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.Black
 import com.example.practica3room.ui.theme.PrimaryBlue
@@ -116,7 +116,7 @@ fun TaskListScreen(navController: NavHostController, viewModel: TaskViewModel) {
             }
 
             is UiState.Success -> {
-                val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+                val tasks = (tasksState as UiState.Success<List<TaskEntity>>).data
 
                 if (tasks.isEmpty()) {
                     Box(
@@ -150,7 +150,7 @@ fun TaskListScreen(navController: NavHostController, viewModel: TaskViewModel) {
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(tasks, key = { it.id ?: 0 }) { task ->
+                        items(tasks, key = { it.id }) { task ->
                             TaskItemReadOnly(task = task)
                         }
                     }
@@ -170,7 +170,7 @@ fun TaskListScreen(navController: NavHostController, viewModel: TaskViewModel) {
 }
 
 @Composable
-fun TaskItemReadOnly(task: TaskApi) {
+fun TaskItemReadOnly(task: TaskEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),

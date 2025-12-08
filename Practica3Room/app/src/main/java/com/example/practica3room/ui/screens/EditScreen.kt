@@ -1,6 +1,5 @@
 package com.example.practica3room.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.practica3room.local.TaskEntity
 import com.example.practica3room.model.DateConverter
-import com.example.practica3room.model.TaskApi
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
 import com.example.practica3room.viewmodel.TaskViewModel
@@ -120,7 +119,7 @@ fun EditScreen(
                 }
 
                 is UiState.Success -> {
-                    val tasks = (tasksState as UiState.Success<List<TaskApi>>).data
+                    val tasks = (tasksState as UiState.Success<List<TaskEntity>>).data
 
                     if (tasks.isEmpty()) {
                         Box(
@@ -140,7 +139,7 @@ fun EditScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(tasks, key = { it.id ?: 0 }) { task ->
+                            items(tasks, key = { it.id }) { task ->
                                 EditTaskCard(
                                     task = task,
                                     viewModel = viewModel
@@ -166,7 +165,7 @@ fun EditScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTaskCard(
-    task: TaskApi,
+    task: TaskEntity,
     viewModel: TaskViewModel
 ) {
     var taskName by remember { mutableStateOf(task.name) }
@@ -314,11 +313,10 @@ fun EditTaskCard(
                     // Botón guardar
                     Button(
                         onClick = {
-                            Log.d("EditScreen", "🔄 Guardando: id=${task.id}, name=$taskName, deadline=$taskDate, status=$taskStatus")
                             viewModel.updateTask(
-                                id = task.id!!,
+                                id = task.id,
                                 name = taskName,
-                                deadline = taskDate,
+                                deadline = DateConverter.toApiFormat(taskDate),
                                 status = taskStatus
                             )
                         },

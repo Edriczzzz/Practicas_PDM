@@ -3,7 +3,7 @@ package com.example.practica3room.di
 import android.content.Context
 import android.util.Log
 import com.example.practica3room.local.AppDatabase
-import com.example.practica3room.data.repository.TaskRepository
+import com.example.practica3room.repository.TaskRepository
 import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.util.NetworkObserver
 import com.example.practica3room.util.SyncPrefs
@@ -57,26 +57,6 @@ object AppContainer {
             Log.e(TAG, "❌ Error inicializando AppContainer", e)
             throw e
         }
-    }
-
-    fun getDatabase(): AppDatabase {
-        checkInitialized()
-        return database
-    }
-
-    fun getSyncPrefs(): SyncPrefs {
-        checkInitialized()
-        return syncPrefs
-    }
-
-    fun getNetworkObserver(): NetworkObserver {
-        checkInitialized()
-        return networkObserver
-    }
-
-    fun getTaskRepository(): TaskRepository {
-        checkInitialized()
-        return taskRepository
     }
 
     private fun checkInitialized() {

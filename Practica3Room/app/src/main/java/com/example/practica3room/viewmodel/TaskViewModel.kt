@@ -4,7 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.practica3room.local.TaskEntity
-import com.example.practica3room.data.repository.TaskRepository
+import com.example.practica3room.repository.TaskRepository
+import com.example.practica3room.repository.TaskApiRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
