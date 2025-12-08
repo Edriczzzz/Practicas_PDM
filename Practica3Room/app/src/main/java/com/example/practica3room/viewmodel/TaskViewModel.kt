@@ -62,6 +62,9 @@ class TaskViewModel(
     // ============ AUTENTICACIÓN (usa API directamente) ============
 
     fun login(username: String, password: String) {
+
+
+
         viewModelScope.launch {
             _authState.value = UiState.Loading
 
@@ -83,6 +86,11 @@ class TaskViewModel(
             _authState.value = UiState.Idle
         }
     }
+
+    fun enterOfflineMode() {
+        _authState.value = UiState.Success("offline")
+    }
+
 
     fun resetAuthState() {
         _authState.value = UiState.Idle

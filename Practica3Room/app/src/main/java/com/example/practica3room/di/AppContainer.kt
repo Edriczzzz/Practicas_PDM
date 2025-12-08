@@ -16,6 +16,10 @@ object AppContainer {
     private lateinit var syncPrefs: SyncPrefs
     private lateinit var networkObserver: NetworkObserver
 
+    val isNetworkAvailable: Boolean
+        get() = networkObserver.isConnected
+
+
     lateinit var taskRepository: TaskRepository
         private set
 

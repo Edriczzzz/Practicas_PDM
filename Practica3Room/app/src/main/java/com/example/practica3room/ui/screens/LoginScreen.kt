@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.practica3room.di.AppContainer
 import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.ui.theme.BackgroundCream
 import com.example.practica3room.ui.theme.PrimaryBlue
@@ -136,6 +137,16 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
         Button(
             onClick = {
                 if (username.isNotBlank() && password.isNotBlank()) {
+
+                    // 🚨 SIN INTERNET: saltar login e iniciar en modo offline
+                    if (!AppContainer.isNetworkAvailable)
+                    {
+                        Log.w("LoginScreen", "🌙 Sin conexión → Entrando en modo offline")
+                        viewModel.enterOfflineMode()
+                        return@Button
+                    }
+
+                    // 🌐 CON INTERNET: login normal
                     Log.d("LoginScreen", "🔐 Intentando login con: $username")
                     viewModel.login(username.trim(), password.trim())
                 }
@@ -148,7 +159,8 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
             ),
             shape = RoundedCornerShape(12.dp),
             enabled = authState !is UiState.Loading
-        ) {
+        )
+ {
             if (authState is UiState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
