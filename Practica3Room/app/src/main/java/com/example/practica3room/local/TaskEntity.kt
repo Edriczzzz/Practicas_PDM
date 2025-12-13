@@ -8,8 +8,9 @@ data class TaskEntity(
     @PrimaryKey val id: Int,
     val name: String,
     val status: Boolean,
-    val deadline: String,  // Formato: yyyy-MM-dd
+    val deadline: String,
+    val userId: Int,  // ← AGREGAR ESTO
     val updatedAt: Long,
-    val pendingSync: Boolean = false,  // ¿Necesita sincronizarse con el servidor?
-    val deleted: Boolean = false       // Marcado como eliminado (soft delete)
+    val pendingSync: Boolean = false,
+    val deleted: Boolean = false
 )

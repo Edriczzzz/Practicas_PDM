@@ -23,6 +23,8 @@ object AppContainer {
     lateinit var taskRepository: TaskRepository
         private set
 
+    var currentUserId: Int = -1
+        private set
     private var isInitialized = false
 
     fun init(context: Context) {
@@ -53,7 +55,7 @@ object AppContainer {
                 networkObserver = networkObserver
             )
             Log.d(TAG, "✅ TaskRepository inicializado")
-
+            currentUserId = syncPrefs.getUserId()
             isInitialized = true
             Log.d(TAG, "🎉 AppContainer inicializado completamente")
 
@@ -61,6 +63,17 @@ object AppContainer {
             Log.e(TAG, "❌ Error inicializando AppContainer", e)
             throw e
         }
+    }
+
+    fun setCurrentUser(userId: Int) {
+        currentUserId = userId
+        Log.d(TAG, "👤 Usuario actual seteado: $userId")
+        syncPrefs.saveUserId(userId)
+    }
+
+    fun clearCurrentUser() {
+        currentUserId = 0
+        Log.d(TAG, "👤 Usuario actual limpiado")
     }
 
     private fun checkInitialized() {

@@ -14,25 +14,16 @@ class TaskSyncWorker(
 
     companion object {
         private const val TAG = "TaskSyncWorker"
+        const val KEY_USER_ID = "user_id"
     }
 
     override suspend fun doWork(): Result {
-        return try {
-            Log.d(TAG, "🔄 Iniciando sincronización en background...")
+        val userId = AppContainer.currentUserId
+        if (userId == -1) return Result.failure()
 
-            val repository = AppContainer.taskRepository
-            val syncResult = repository.syncAll()
-
-            if (syncResult.isSuccess) {
-                Log.d(TAG, "✅ Sincronización exitosa")
-                Result.success()
-            } else {
-                Log.e(TAG, "❌ Error en sincronización: ${syncResult.exceptionOrNull()?.message}")
-                Result.retry()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Excepción en worker", e)
-            Result.retry()
-        }
+        val result = AppContainer.taskRepository.syncAll(userId)
+        return if (result.isSuccess) Result.success() else Result.retry()
     }
+
+
 }

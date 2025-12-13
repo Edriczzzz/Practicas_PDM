@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [TaskEntity::class],
-    version = 1,
+    version = 2,  // ← INCREMENTADO a versión 2
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "tasks_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration()  // Borrará datos al cambiar versión
                     .build()
                 INSTANCE = instance
                 instance

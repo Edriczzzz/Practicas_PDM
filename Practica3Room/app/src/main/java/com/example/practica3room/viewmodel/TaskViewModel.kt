@@ -3,17 +3,17 @@ package com.example.practica3room.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.practica3room.di.AppContainer
 import com.example.practica3room.local.TaskEntity
-import com.example.practica3room.repository.TaskRepository
 import com.example.practica3room.repository.TaskApiRepository
+import com.example.practica3room.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-// Estados de la UI
+// ---------------- UI STATE ----------------
 sealed class UiState<out T> {
     object Idle : UiState<Nothing>()
     object Loading : UiState<Nothing>()
@@ -23,59 +23,45 @@ sealed class UiState<out T> {
 
 class TaskViewModel(
     private val repository: TaskRepository,
-    private val apiRepository: TaskApiRepository  // Mantener para login
+    private val apiRepository: TaskApiRepository
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "TaskViewModel"
     }
 
-    // Estado de las tareas desde Room (Flow automático)
-    val tasksState: StateFlow<UiState<List<TaskEntity>>> = repository.tasks
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            emptyList()
-        )
-        .let { flow ->
-            MutableStateFlow<UiState<List<TaskEntity>>>(UiState.Loading).apply {
-                viewModelScope.launch {
-                    flow.collect { tasks ->
-                        value = UiState.Success(tasks)
-                    }
-                }
-            }
-        }
+    // ---------------- STATES ----------------
+    private val _tasksState = MutableStateFlow<UiState<List<TaskEntity>>>(UiState.Idle)
+    val tasksState: StateFlow<UiState<List<TaskEntity>>> = _tasksState.asStateFlow()
 
-    // Estado de operaciones individuales (crear, actualizar, eliminar)
-    private val _operationState = MutableStateFlow<UiState<String>>(UiState.Idle)
-    val operationState: StateFlow<UiState<String>> = _operationState.asStateFlow()
-
-    // Estado de autenticación
     private val _authState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val authState: StateFlow<UiState<String>> = _authState.asStateFlow()
 
-    // Estado de sincronización
+    private val _operationState = MutableStateFlow<UiState<String>>(UiState.Idle)
+    val operationState: StateFlow<UiState<String>> = _operationState.asStateFlow()
+
     private val _syncState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val syncState: StateFlow<UiState<String>> = _syncState.asStateFlow()
 
-    // ============ AUTENTICACIÓN (usa API directamente) ============
-
+    // ---------------- LOGIN ----------------
     fun login(username: String, password: String) {
-
-
-
         viewModelScope.launch {
             _authState.value = UiState.Loading
 
             val result = apiRepository.login(username, password)
 
-            _authState.value = if (result.isSuccess) {
-                // Después del login exitoso, sincronizar tareas
+            if (result.isSuccess) {
+                val userId = result.getOrNull()!!
+
+                AppContainer.setCurrentUser(userId)
+                startObservingUserTasks(userId)
                 syncAll()
-                UiState.Success("Login exitoso")
+
+                _authState.value = UiState.Success("Login correcto")
             } else {
-                UiState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+                _authState.value = UiState.Error(
+                    result.exceptionOrNull()?.message ?: "Login fallido"
+                )
             }
         }
     }
@@ -83,40 +69,62 @@ class TaskViewModel(
     fun logout() {
         viewModelScope.launch {
             apiRepository.logout()
+            AppContainer.clearCurrentUser()
             _authState.value = UiState.Idle
+            _tasksState.value = UiState.Idle
         }
     }
 
     fun enterOfflineMode() {
-        _authState.value = UiState.Success("offline")
-    }
-
-
-    fun resetAuthState() {
-        _authState.value = UiState.Idle
-    }
-
-    // ============ OPERACIONES DE TAREAS (usan Repository híbrido) ============
-
-    fun loadTasks() {
-        viewModelScope.launch {
-            Log.d(TAG, "📂 Cargando tareas locales...")
-            // Las tareas se cargan automáticamente del Flow, pero forzamos sincronización
-            syncAll()
+        val userId = AppContainer.currentUserId
+        if (userId != -1) {
+            startObservingUserTasks(userId)
+            _authState.value = UiState.Success("Offline")
+        } else {
+            _authState.value = UiState.Error("No hay usuario guardado")
         }
     }
 
+    // ---------------- TASK OBSERVER ----------------
+    private fun startObservingUserTasks(userId: Int) {
+        viewModelScope.launch {
+            _tasksState.value = UiState.Loading
+
+            repository.observeTasksForUser(userId)
+                .catch { e ->
+                    Log.e(TAG, "❌ Error observando tareas", e)
+                    _tasksState.value =
+                        UiState.Error(e.message ?: "Error al cargar tareas")
+                }
+                .collect { tasks ->
+                    Log.d(TAG, "📋 ${tasks.size} tareas para userId=$userId")
+                    _tasksState.value = UiState.Success(tasks)
+                }
+        }
+    }
+
+    // ---------------- CRUD ----------------
     fun createTask(name: String, deadline: String) {
         viewModelScope.launch {
+            val userId = AppContainer.currentUserId
+            if (userId == -1) {
+                _operationState.value = UiState.Error("Usuario no autenticado")
+                return@launch
+            }
+
             _operationState.value = UiState.Loading
 
-            Log.d(TAG, "➕ Creando tarea: $name")
-            val result = repository.addTask(name, deadline, false)
+            val result = repository.addTask(
+                name = name,
+                deadline = deadline,
+                status = false,
+                userId = userId
+            )
 
             _operationState.value = if (result.isSuccess) {
-                UiState.Success("Tarea creada exitosamente")
+                UiState.Success("Tarea creada")
             } else {
-                UiState.Error(result.exceptionOrNull()?.message ?: "Error al crear tarea")
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error al crear")
             }
         }
     }
@@ -124,12 +132,10 @@ class TaskViewModel(
     fun updateTask(id: Int, name: String, deadline: String, status: Boolean) {
         viewModelScope.launch {
             _operationState.value = UiState.Loading
-
-            Log.d(TAG, "✏️ Actualizando tarea $id: $name")
             val result = repository.updateTask(id, name, deadline, status)
 
             _operationState.value = if (result.isSuccess) {
-                UiState.Success("Tarea actualizada exitosamente")
+                UiState.Success("Tarea actualizada")
             } else {
                 UiState.Error(result.exceptionOrNull()?.message ?: "Error al actualizar")
             }
@@ -139,59 +145,67 @@ class TaskViewModel(
     fun deleteTask(id: Int) {
         viewModelScope.launch {
             _operationState.value = UiState.Loading
-
-            Log.d(TAG, "🗑️ Eliminando tarea $id")
             val result = repository.deleteTask(id)
 
             _operationState.value = if (result.isSuccess) {
-                UiState.Success("Tarea eliminada exitosamente")
+                UiState.Success("Tarea eliminada")
             } else {
                 UiState.Error(result.exceptionOrNull()?.message ?: "Error al eliminar")
             }
         }
     }
 
-    fun updateTaskStatus(id: Int, newStatus: Boolean) {
-        viewModelScope.launch {
-            Log.d(TAG, "🔄 Actualizando estado de tarea $id a: $newStatus")
-            repository.updateTaskStatus(id, newStatus)
-        }
-    }
-
-    // ============ SINCRONIZACIÓN ============
-
+    // ---------------- SYNC ----------------
     fun syncAll() {
         viewModelScope.launch {
+            val userId = AppContainer.currentUserId
+            if (userId == -1) return@launch
+
             _syncState.value = UiState.Loading
 
-            Log.d(TAG, "🔄 Sincronizando con servidor...")
-            val result = repository.syncAll()
+            val result = repository.syncAll(userId)
 
             _syncState.value = if (result.isSuccess) {
-                Log.d(TAG, "✅ Sincronización completada")
-                UiState.Success("Sincronización exitosa")
+                UiState.Success("Sync OK")
             } else {
-                Log.e(TAG, "❌ Error en sincronización: ${result.exceptionOrNull()?.message}")
-                UiState.Error(result.exceptionOrNull()?.message ?: "Error al sincronizar")
+                UiState.Error(result.exceptionOrNull()?.message ?: "Error en sync")
             }
         }
     }
 
+    // ---------------- HELPERS ----------------
+    fun getTaskById(id: Int): TaskEntity? {
+        return (tasksState.value as? UiState.Success)?.data?.find { it.id == id }
+    }
     fun resetOperationState() {
         _operationState.value = UiState.Idle
     }
+    fun loadTasks() {
+        val userId = AppContainer.currentUserId
+        if (userId == -1) {
+            _tasksState.value = UiState.Error("Usuario no autenticado")
+            return
+        }
 
-    fun resetSyncState() {
-        _syncState.value = UiState.Idle
+        // El Flow ya está observando Room, solo forzamos sync
+        syncAll()
     }
 
-    // ============ HELPER ============
+    fun resetAuthState() {
+        _authState.value = UiState.Idle
+    }
+    fun updateTaskStatus(id: Int, newStatus: Boolean) {
+        viewModelScope.launch {
+            val result = repository.updateTaskStatus(id, newStatus)
 
-    // Obtener una tarea específica del estado actual
-    fun getTaskById(id: Int): TaskEntity? {
-        return when (val state = tasksState.value) {
-            is UiState.Success -> state.data.find { it.id == id }
-            else -> null
+            if (result.isFailure) {
+                Log.e(
+                    "TaskViewModel",
+                    "❌ Error actualizando estado: ${result.exceptionOrNull()?.message}"
+                )
+            }
         }
     }
+
+
 }

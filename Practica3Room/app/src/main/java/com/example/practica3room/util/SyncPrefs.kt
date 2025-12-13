@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.SharedPreferences
 
 class SyncPrefs(context: Context) {
+
     private val prefs: SharedPreferences =
         context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
 
-    fun getLastSync(): Long = prefs.getLong("last_sync", 0)
+    fun getLastSync(): Long =
+        prefs.getLong("last_sync", 0)
 
     fun setLastSync(timestamp: Long) {
         prefs.edit().putLong("last_sync", timestamp).apply()
@@ -16,4 +18,11 @@ class SyncPrefs(context: Context) {
     fun clearLastSync() {
         prefs.edit().remove("last_sync").apply()
     }
+
+    fun saveUserId(userId: Int) {
+        prefs.edit().putInt("user_id", userId).apply()
+    }
+
+    fun getUserId(): Int =
+        prefs.getInt("user_id", -1)
 }
