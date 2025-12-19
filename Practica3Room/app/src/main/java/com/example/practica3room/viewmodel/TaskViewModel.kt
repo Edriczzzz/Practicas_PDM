@@ -54,21 +54,26 @@ class TaskViewModel(
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _authState.value = UiState.Loading
-
-            // 🔹 1. Si NO hay red → login offline
+// 🔹 CASO OFFLINE → validar contra Room
             if (!AppContainer.isNetworkAvailable) {
-                val savedUserId = AppContainer.currentUserId
+                val userDao = AppContainer.getUserDao()
+                val user = userDao.loginOffline(username, password)
+                val users = userDao.getAll()
+                Log.d(TAG, "👥 Usuarios en Room: $users")
 
-                if (savedUserId != -1) {
-                    startObservingUserTasks(savedUserId)
+                if (user != null) {
+                    AppContainer.setCurrentUser(user.id)
+                    startObservingUserTasks(user.id)
                     _authState.value = UiState.Success("Offline")
                 } else {
-                    _authState.value = UiState.Error("No hay sesión guardada para modo offline")
+                    _authState.value = UiState.Error("Usuario o contraseña incorrectos (offline)")
                 }
                 return@launch
             }
 
-            // 🔹 2. Login normal online
+
+
+            // 🔹 CASO 2: CON CONEXIÓN → LOGIN NORMAL
             val result = apiRepository.login(username, password)
 
             if (result.isSuccess) {
@@ -86,6 +91,7 @@ class TaskViewModel(
             }
         }
     }
+
 
 
     fun logout() {

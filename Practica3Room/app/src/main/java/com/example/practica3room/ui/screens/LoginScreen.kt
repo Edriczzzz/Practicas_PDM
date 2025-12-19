@@ -142,6 +142,7 @@ fun LoginScreen(navController: NavHostController, viewModel: TaskViewModel) {
                     if (!AppContainer.isNetworkAvailable)
                     {
                         Log.w("LoginScreen", "🌙 Sin conexión → Entrando en modo offline")
+                        viewModel.login(username, password)
                         viewModel.enterOfflineMode()
                         return@Button
                     }

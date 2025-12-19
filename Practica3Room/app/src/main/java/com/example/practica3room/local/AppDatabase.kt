@@ -6,14 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [TaskEntity::class],
-    version = 2,  // ← INCREMENTADO a versión 2
+    entities = [TaskEntity::class, UserEntity::class],
+    version = 3, // ⬆️ subir versión
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDAO
-
+    abstract fun userDao(): UserDao
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null

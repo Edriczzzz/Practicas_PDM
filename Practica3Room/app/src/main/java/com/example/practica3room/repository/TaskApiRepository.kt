@@ -2,6 +2,7 @@ package com.example.practica3room.repository
 
 import android.util.Log
 import com.example.practica3room.di.AppContainer
+import com.example.practica3room.local.UserEntity
 import com.example.practica3room.model.*
 import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.util.SyncPrefs
@@ -43,8 +44,19 @@ class TaskApiRepository {
                 // Guardar usuario ACTIVO
                 AppContainer.setCurrentUser(userId)
 
+
+                val userEntity = UserEntity(
+                    id = userId,
+                    username = username,
+                    password = password
+                )
+                AppContainer.getUserDao().insert(userEntity)
+
+
                 Log.d(TAG, "✅ Login correcto userId=$userId")
                 Result.success(userId)
+
+
 
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error en login", e)

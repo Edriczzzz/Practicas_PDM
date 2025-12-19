@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.practica3room.local.AppDatabase
+import com.example.practica3room.local.UserDao
 import com.example.practica3room.repository.TaskRepository
 import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.util.NetworkObserver
@@ -28,7 +29,6 @@ object AppContainer {
 
     val isNetworkAvailable: Boolean
         get() = networkObserver.isConnected
-
 
     lateinit var taskRepository: TaskRepository
         private set
@@ -95,6 +95,14 @@ object AppContainer {
             )
         }
     }
+
+    fun getSavedUserId(): Int {
+        return syncPrefs.getUserId()
+    }
+
+    fun getUserDao(): UserDao = database.userDao()
+
+
 
     // Para testing o casos especiales
     fun reset() {
