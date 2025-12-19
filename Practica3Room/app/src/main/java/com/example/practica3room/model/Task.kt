@@ -77,16 +77,17 @@ object DateConverter {
 
         fun TaskApi.toEntity(): TaskEntity {
                 return TaskEntity(
-                        id = this.id ?: 0,
+                        id = this.id, // ✅ nullable real
                         name = this.name,
                         status = this.status,
                         deadline = this.deadline,
-                        userId = this.userId,  // ← AGREGADO
+                        userId = this.userId,
                         updatedAt = System.currentTimeMillis(),
                         pendingSync = false,
                         deleted = false
                 )
         }
+
 
         // Extensión para convertir TaskEntity a TaskApi
         fun TaskEntity.toApi(): TaskApi {

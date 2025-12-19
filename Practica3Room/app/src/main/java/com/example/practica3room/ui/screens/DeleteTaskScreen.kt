@@ -147,10 +147,10 @@ fun DeleteTasksScreen(navController: NavHostController, viewModel: TaskViewModel
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(tasks, key = { it.id }) { task ->
+                        items(tasks, key = { it.localId }) { task ->
                             TaskItemWithDelete(
                                 task = task,
-                                onDelete = { viewModel.deleteTask(task.id) }
+                                onDelete = { viewModel.deleteTask(task.localId) }
                             )
                         }
                     }

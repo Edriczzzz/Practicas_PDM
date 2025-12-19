@@ -2,11 +2,21 @@ package com.example.practica3room.di
 
 import android.content.Context
 import android.util.Log
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.practica3room.local.AppDatabase
 import com.example.practica3room.repository.TaskRepository
 import com.example.practica3room.remote.RetrofitClient
 import com.example.practica3room.util.NetworkObserver
 import com.example.practica3room.util.SyncPrefs
+import com.example.practica3room.worker.TaskSyncWorker
+import java.util.concurrent.TimeUnit
+
+
 
 object AppContainer {
 
@@ -72,8 +82,9 @@ object AppContainer {
     }
 
     fun clearCurrentUser() {
-        currentUserId = 0
+        currentUserId = -1
         Log.d(TAG, "👤 Usuario actual limpiado")
+        syncPrefs.saveUserId(-1)
     }
 
     private fun checkInitialized() {
@@ -90,4 +101,25 @@ object AppContainer {
         isInitialized = false
         Log.d(TAG, "🔄 AppContainer reseteado")
     }
+    fun scheduleSync(context: Context) {
+        val userId = currentUserId
+        if (userId == -1) return
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val req = PeriodicWorkRequestBuilder<TaskSyncWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .setInputData(workDataOf(TaskSyncWorker.KEY_USER_ID to userId))
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "task_sync",
+            ExistingPeriodicWorkPolicy.UPDATE, // o KEEP
+            req
+        )
+    }
+
+
 }

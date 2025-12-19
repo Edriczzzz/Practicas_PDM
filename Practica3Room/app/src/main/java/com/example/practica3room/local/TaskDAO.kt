@@ -15,7 +15,7 @@ interface TaskDAO {
     suspend fun getAllTasks(userId: Int): List<TaskEntity>
 
     // Obtener una tarea por ID (sin filtro de usuario para operaciones internas)
-    @Query("SELECT * FROM tasks WHERE id = :id")
+    @Query("SELECT * FROM tasks WHERE localId = :id")
     suspend fun getTaskById(id: Int): TaskEntity?
 
     // Insertar o actualizar tarea
@@ -57,4 +57,8 @@ interface TaskDAO {
     // Eliminar físicamente tareas marcadas como deleted
     @Query("DELETE FROM tasks WHERE deleted = 1")
     suspend fun purgeDeleted()
+
+    @Query("SELECT * FROM tasks WHERE id = :remoteId LIMIT 1")
+    suspend fun getTaskByRemoteId(remoteId: Int): TaskEntity?
+
 }

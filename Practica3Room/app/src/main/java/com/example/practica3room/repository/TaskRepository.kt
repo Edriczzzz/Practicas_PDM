@@ -13,7 +13,9 @@ import com.example.practica3room.util.SyncPrefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import okhttp3.Response
 import kotlin.random.Random
+
 
 class TaskRepository(
     private val dao: TaskDAO,
@@ -46,16 +48,16 @@ class TaskRepository(
 
         try {
             val task = TaskEntity(
-                id = Random.nextInt(1, Int.MAX_VALUE),
+                id = null,
                 name = name,
                 status = status,
                 deadline = deadline,
-                userId = userId,  // ← ASIGNAR userId
+                userId = userId,
                 updatedAt = System.currentTimeMillis(),
                 pendingSync = true
             )
-
             dao.insert(task)
+
             Log.d(TAG, "✅ Tarea guardada localmente para usuario $userId: ${task.name}")
 
             if (networkObserver.isConnected) {
@@ -174,11 +176,13 @@ class TaskRepository(
 
             pendingTasks.forEach { task ->
                 if (task.deleted) {
-                    deleteTaskFromServer(task.id)
+                    task.id?.let { deleteTaskFromServer(it) }
+                        ?: dao.delete(task) // nunca existió en servidor
                 } else {
                     syncTaskToServer(task)
                 }
             }
+
 
             // 2. Descargar tareas del servidor
             val response = api.getTasks()
@@ -190,8 +194,21 @@ class TaskRepository(
                 val userTasks = serverTasks.filter { it.userId == userId }
                 Log.d(TAG, "📥 Tareas del usuario $userId: ${userTasks.size}")
 
-                val entities = userTasks.map { it.toEntity() }
+                val entities = userTasks.map { apiTask ->
+                    val local = dao.getTaskByRemoteId(apiTask.id!!)
+                    val entity = apiTask.toEntity()
+
+                    if (local != null) {
+                        // 🔥 Ya existe en Room → conservar su localId
+                        entity.copy(localId = local.localId)
+                    } else {
+                        // 🆕 Nueva tarea
+                        entity
+                    }
+                }
+
                 dao.insertAll(entities)
+
 
                 prefs.setLastSync(System.currentTimeMillis())
                 Log.d(TAG, "✅ Sincronización completada para usuario $userId")
@@ -210,22 +227,36 @@ class TaskRepository(
         try {
             val request = task.toRequest()
 
-            val response = if (taskExistsOnServer(task.id)) {
-                api.updateTask(task.id, request)
+            if (task.id == null) {
+                // CREATE
+                val response = api.createTask(request)
+                if (response.isSuccessful) {
+                    val created = response.body()
+                    if (created?.id != null) {
+                        dao.insert(
+                            task.copy(
+                                id = created.id,
+                                pendingSync = false
+                            )
+                        )
+                        Log.d(TAG, "✅ Tarea creada en servidor: ${created.id}")
+                    }
+                }
             } else {
-                api.createTask(request)
+                // UPDATE
+                val response = api.updateTask(task.id, request)
+                if (response.isSuccessful) {
+                    dao.insert(task.copy(pendingSync = false))
+                    Log.d(TAG, "✅ Tarea actualizada en servidor: ${task.id}")
+                }
             }
 
-            if (response.isSuccessful) {
-                dao.insert(task.copy(pendingSync = false))
-                Log.d(TAG, "✅ Tarea sincronizada: ${task.name}")
-            } else {
-                Log.e(TAG, "❌ Error al sincronizar: ${response.code()}")
-            }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Excepción al sincronizar tarea", e)
         }
     }
+
+
 
     private suspend fun deleteTaskFromServer(taskId: Int) {
         try {

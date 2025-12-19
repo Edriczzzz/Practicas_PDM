@@ -18,12 +18,18 @@ class TaskSyncWorker(
     }
 
     override suspend fun doWork(): Result {
-        val userId = AppContainer.currentUserId
-        if (userId == -1) return Result.failure()
+        // 1) Prioridad: inputData
+        val inputUserId = inputData.getInt(KEY_USER_ID, -1)
+
+        // 2) Fallback: AppContainer
+        val userId = if (inputUserId != -1) inputUserId else AppContainer.currentUserId
+
+        if (userId == -1) return Result.retry()
 
         val result = AppContainer.taskRepository.syncAll(userId)
         return if (result.isSuccess) Result.success() else Result.retry()
     }
+
 
 
 }

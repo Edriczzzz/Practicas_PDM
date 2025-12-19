@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+
 
 // ---------------- UI STATE ----------------
 sealed class UiState<out T> {
@@ -43,11 +45,30 @@ class TaskViewModel(
     private val _syncState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val syncState: StateFlow<UiState<String>> = _syncState.asStateFlow()
 
+
+    private var observeTasksJob: Job? = null
+
+
+
     // ---------------- LOGIN ----------------
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _authState.value = UiState.Loading
 
+            // 🔹 1. Si NO hay red → login offline
+            if (!AppContainer.isNetworkAvailable) {
+                val savedUserId = AppContainer.currentUserId
+
+                if (savedUserId != -1) {
+                    startObservingUserTasks(savedUserId)
+                    _authState.value = UiState.Success("Offline")
+                } else {
+                    _authState.value = UiState.Error("No hay sesión guardada para modo offline")
+                }
+                return@launch
+            }
+
+            // 🔹 2. Login normal online
             val result = apiRepository.login(username, password)
 
             if (result.isSuccess) {
@@ -66,14 +87,20 @@ class TaskViewModel(
         }
     }
 
+
     fun logout() {
         viewModelScope.launch {
             apiRepository.logout()
             AppContainer.clearCurrentUser()
+
+            observeTasksJob?.cancel()
+            observeTasksJob = null
+
             _authState.value = UiState.Idle
             _tasksState.value = UiState.Idle
         }
     }
+
 
     fun enterOfflineMode() {
         val userId = AppContainer.currentUserId
@@ -87,14 +114,16 @@ class TaskViewModel(
 
     // ---------------- TASK OBSERVER ----------------
     private fun startObservingUserTasks(userId: Int) {
-        viewModelScope.launch {
+        // ✅ Cancela el observer anterior para que NO haya 2 collectors activos
+        observeTasksJob?.cancel()
+
+        observeTasksJob = viewModelScope.launch {
             _tasksState.value = UiState.Loading
 
             repository.observeTasksForUser(userId)
                 .catch { e ->
                     Log.e(TAG, "❌ Error observando tareas", e)
-                    _tasksState.value =
-                        UiState.Error(e.message ?: "Error al cargar tareas")
+                    _tasksState.value = UiState.Error(e.message ?: "Error al cargar tareas")
                 }
                 .collect { tasks ->
                     Log.d(TAG, "📋 ${tasks.size} tareas para userId=$userId")
@@ -102,6 +131,8 @@ class TaskViewModel(
                 }
         }
     }
+
+
 
     // ---------------- CRUD ----------------
     fun createTask(name: String, deadline: String) {
@@ -174,9 +205,12 @@ class TaskViewModel(
     }
 
     // ---------------- HELPERS ----------------
-    fun getTaskById(id: Int): TaskEntity? {
-        return (tasksState.value as? UiState.Success)?.data?.find { it.id == id }
+    fun getTaskById(localId: Int): TaskEntity? {
+        return (tasksState.value as? UiState.Success)
+            ?.data
+            ?.find { it.localId == localId }
     }
+
     fun resetOperationState() {
         _operationState.value = UiState.Idle
     }

@@ -50,7 +50,7 @@ class MyApplication : Application() {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "task_sync",
-            ExistingPeriodicWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.KEEP,
             syncRequest
         )
     }

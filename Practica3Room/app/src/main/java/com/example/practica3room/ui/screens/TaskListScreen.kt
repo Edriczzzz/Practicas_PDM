@@ -32,9 +32,9 @@ fun TaskListScreen(navController: NavHostController, viewModel: TaskViewModel) {
     val tasksState by viewModel.tasksState.collectAsState()
 
     // Cargar tareas al iniciar
-    LaunchedEffect(Unit) {
-        viewModel.loadTasks()
-    }
+    //LaunchedEffect(Unit) {
+       // viewModel.loadTasks()
+   // }
 
     Scaffold(
         topBar = {
@@ -150,7 +150,7 @@ fun TaskListScreen(navController: NavHostController, viewModel: TaskViewModel) {
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(tasks, key = { it.id }) { task ->
+                        items(tasks, key = { it.localId }) { task ->
                             TaskItemReadOnly(task = task)
                         }
                     }

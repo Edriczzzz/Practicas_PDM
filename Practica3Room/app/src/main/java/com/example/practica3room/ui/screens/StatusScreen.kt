@@ -138,11 +138,11 @@ fun StatusScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(tasks, key = { it.id }) { task ->
+                            items(tasks, key = { it.localId }) { task ->
                                 TaskStatusItem(
                                     task = task,
                                     onStatusChange = { newStatus ->
-                                        viewModel.updateTaskStatus(task.id, newStatus)
+                                        viewModel.updateTaskStatus(task.localId, newStatus)
                                     }
                                 )
                             }

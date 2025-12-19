@@ -139,7 +139,7 @@ fun EditScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(tasks, key = { it.id }) { task ->
+                            items(tasks, key = { it.localId }) { task ->
                                 EditTaskCard(
                                     task = task,
                                     viewModel = viewModel
@@ -314,7 +314,7 @@ fun EditTaskCard(
                     Button(
                         onClick = {
                             viewModel.updateTask(
-                                id = task.id,
+                                id = task.localId,
                                 name = taskName,
                                 deadline = DateConverter.toApiFormat(taskDate),
                                 status = taskStatus
